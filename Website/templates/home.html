@@ -1,0 +1,10 @@
+{% extends "base.html" %} {% block title %} Home {% endblock %}
+{% block content %}
+<div class="content">
+    <h1>Communication LTD</h1>
+    <h4>Customers list:</h4>
+    {% for customer in data %}
+        <h5>{{customer.first_name}}</h5>
+    {% endfor %}
+</div>
+{% endblock %}
