@@ -25,11 +25,8 @@ def logout():
 def add_customer():
     if request.method == 'POST':
         email = request.form.get('email')
-        print(email)
         first_name = request.form.get('firstName')
-        print(first_name)
         customer = Customers.query.filter_by(email=email).first()
-        print(customer)
         if customer:
             flash('Email already exists.', category='error')
         elif len(email) < 4:
