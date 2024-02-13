@@ -34,7 +34,7 @@ def add_customer():
         elif len(first_name) < 2:
             flash('First name must be greater than 1 character.', category='error')
         else:
-            new_customer = Customers(email=email, first_name=first_name)
+            new_customer = Customers(email=email, first_name=first_name, user_id=current_user.id)
             db.session.add(new_customer)
             db.session.commit()
             flash(f'Added customer {new_customer.first_name}', category='success')
