@@ -1,21 +1,21 @@
+# Imports.
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_mail import Mail
 
-mail = Mail()
 db = SQLAlchemy()
-DB_NAME = "database.db"
 
 
 def create_app():
+    # Init app with Flask library.
     app = Flask(__name__)
     app.config['SECRET_KEY'] = 'hjshjhdjah kjshkjdhjs'
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://rejim:rejim123@localhost/mydatabase'
-
+    db_name = "mydatabase"
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+pymysql://rejim:rejim123@localhost/{db_name}'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-    # Configure Flask-Mail
+    # Init Flask-Mail to send random value for forgot password
     app.config['MAIL_SERVER'] = 'smtp.gmail.com'
     app.config['MAIL_PORT'] = 587
     app.config['MAIL_USE_TLS'] = True
@@ -23,12 +23,14 @@ def create_app():
     app.config['MAIL_PASSWORD'] = 'hidb cigz wsco wlth'
     app.config['MAIL_DEFAULT_SENDER'] = 'verizzonmand2@gmail.com'
 
-    # Initialize Flask-Mail with the Flask app
+    # Init Flask-Mail with the Flask app.
+    mail = Mail()
     mail.init_app(app)
 
-    # Initialize SQLAlchemy with the Flask app
+    # Init SQLAlchemy with the Flask app.
     db.init_app(app)
 
+    # Imports.
     from .views import views
     from .auth import auth
 
@@ -45,7 +47,7 @@ def create_app():
     login_manager.init_app(app)
 
     @login_manager.user_loader
-    def load_user(id):
-        return User.query.get(int(id))
+    def load_user(id_val):
+        return User.query.get(int(id_val))
 
     return app

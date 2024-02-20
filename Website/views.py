@@ -6,13 +6,15 @@ from . import db
 views = Blueprint('views', __name__)
 
 
+# Home page function: shows the Customers names for each User.
 @views.route('/')
 @login_required
 def home():
-    customers = Customers.query.all()
+    customers = Customers.query.filter_by(user_id=current_user.id).all()
     return render_template('home.html', data=customers, user=current_user)
 
 
+# Logout function.
 @views.route('/logout')
 @login_required
 def logout():
@@ -20,17 +22,19 @@ def logout():
     return redirect(url_for('auth.login'))
 
 
+# Add customer page function:
+# gets email (unique) and customer name.
 @views.route('/customers', methods=['GET', 'POST'])
 @login_required
 def add_customer():
     if request.method == 'POST':
         email = request.form.get('email')
         first_name = request.form.get('firstName')
-        customer = Customers.query.filter_by(email=email).first()
+        customer = Customers.query.filter_by(email=email, user_id=current_user.id).first()
         if customer:
             flash('Email already exists.', category='error')
-        elif len(email) < 4:
-            flash('Email must be greater than 3 characters.', category='error')
+        elif len(email) < 5:
+            flash('Email must be greater than 4 characters.', category='error')
         elif len(first_name) < 2:
             flash('First name must be greater than 1 character.', category='error')
         else:
