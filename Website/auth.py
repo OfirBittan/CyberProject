@@ -2,13 +2,14 @@
 import os
 import random
 from datetime import datetime, timedelta
-from .models import User
+from .models import User, PasswordHistory
 from passlib.hash import pbkdf2_sha256
 import hashlib
 from . import db
 from flask import Blueprint, render_template, request, flash, redirect, url_for, session
 from flask_login import login_user, current_user
 from flask_mail import Message, Mail
+from Website import passwordCheck
 
 MAX_LOGIN_ATTEMPTS = 3  # Max num of login attempts before blocking user.
 BLOCK_DURATION = 1  # Minutes of user being blocked.
@@ -71,25 +72,24 @@ def sign_up():
         password1 = request.form.get('password1')
         password2 = request.form.get('password2')
         user = User.query.filter_by(email=email).first()
-        if user:
+        if user:  # Check if email already exists in db.
             flash('Email already exists.', category='error')
-        elif len(email) < 5:
+        elif len(email) < 5:  # Check email length.
             flash('Email address must be greater than 4 characters.', category='error')
-        elif len(first_name) < 2:
+        elif len(first_name) < 2:  # Check first name length.
             flash('First name must be greater than 1 character.', category='error')
-        elif password1 != password2:
-            flash('Passwords don\'t match.', category='error')
-        # Adding here more checks for password according to the 'passwordRequirement.jason' file.
-        elif len(password1) < 7:
-            flash('Password must be at least 7 characters.', category='error')
+        elif password1 != password2:  # Check same 2 passwords.
+            flash('Passwords do not match.', category='error')
         else:
-            hashed_password = generate_password_hash(password1)
-            new_user = User(email=email, first_name=first_name, password=hashed_password)
-            db.session.add(new_user)
-            db.session.commit()
-            login_user(new_user, remember=True)
-            flash('Account created!', category='success')
-            return redirect(url_for('views.home'))
+            if passwordCheck.main_check(None, password1):  # Check if the password is according to requirements.
+                hashed_password = generate_password_hash(password1)
+                new_user = User(email=email, first_name=first_name, password=hashed_password)
+                db.session.add(new_user)
+                db.session.commit()
+                PasswordHistory.save_password_history(new_user.id, hashed_password)
+                login_user(new_user, remember=True)
+                flash('Account created!', category='success')
+                return redirect(url_for('views.home'))
     return render_template("sign_up.html", user=current_user)
 
 
@@ -119,7 +119,6 @@ def forgot_password():
             send_reset_code_email(email, code)
             session['reset_code_hash'] = hashlib.sha1(code.encode()).hexdigest()
             flash('A code has been sent to your email. Please check your inbox.', category='success')
-            # return redirect(url_for('auth.enter_code', email=email))
             return redirect(url_for('auth.verify_code_from_mail', email=email))
         else:
             flash('Email does not exist.', category='error')
@@ -141,7 +140,7 @@ def send_reset_code_email(email, code):
 
 
 # Verify code from mail function.
-@auth.route('/enter_code', methods=['GET', 'POST'])
+@auth.route('/verify_code_from_mail', methods=['GET', 'POST'])
 def verify_code_from_mail():
     email = request.args.get('email')
     user = current_user
@@ -170,15 +169,14 @@ def reset_password():
             if VerificationCode.verify_code(email, code):
                 if new_password != confirm_password:
                     flash('Passwords do not match.', category='error')
-                # Adding here more checks for password according to the 'passwordRequirement.jason' file.
-                elif len(new_password) < 7:
-                    flash('Password must be at least 7 characters.', category='error')
                 else:
-                    hashed_new_password = generate_password_hash(new_password)
-                    user.password = hashed_new_password
-                    db.session.commit()
-                    flash('Password changed successfully!', category='success')
-                    return redirect(url_for('auth.login'))
+                    if passwordCheck.main_check(user, new_password):
+                        hashed_new_password = generate_password_hash(new_password)
+                        user.password = hashed_new_password
+                        db.session.commit()
+                        PasswordHistory.save_password_history(user.id, hashed_new_password)
+                        flash('Password changed successfully!', category='success')
+                        return redirect(url_for('auth.login'))
             else:
                 flash('Invalid or expired reset token.', category='error')
         else:
