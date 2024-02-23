@@ -1,5 +1,6 @@
 {% extends "base.html" %} {% block title %} Sign up {% endblock %}
 {% block content %}
+{% autoescape false %}
 <form method="POST">
     <h3 align="center">Sign up</h3>
     <div class="form-group" align="">
@@ -44,4 +45,5 @@
     </div>
     <br><button type="submit" class="btn btn-primary">Submit</button>
 </form>
+{% endautoescape %}
 {% endblock %}
