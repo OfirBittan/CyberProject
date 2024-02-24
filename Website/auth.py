@@ -2,6 +2,9 @@
 import os
 import random
 from datetime import datetime, timedelta
+
+from sqlalchemy import text
+
 from .models import User, PasswordHistory
 from passlib.hash import pbkdf2_sha256
 import hashlib
@@ -27,7 +30,15 @@ def login():
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
-        user = User.query.filter_by(email=email).first()
+
+        # # Safe version
+        # user = User.query.filter_by(email=email).first()
+
+        # Unsafe version
+        sql_query = text(f"SELECT * FROM user WHERE email = '{email}' LIMIT 1;")
+        result = db.session.execute(sql_query)
+        user = result.fetchone()
+
         if user:  # Checks if the user exists according to email.
             if user.is_blocked:  # Checks if the user blocked after 3 attempts.
                 if user.block_expiration > datetime.utcnow():
@@ -71,13 +82,22 @@ def sign_up():
         first_name = request.form.get('firstName')
         password1 = request.form.get('password1')
         password2 = request.form.get('password2')
-        user = User.query.filter_by(email=email).first()
+
+        # # Safe version
+        # user = User.query.filter_by(email=email).first()
+
+        # Unsafe version
+        sql_query = text(f"SELECT * FROM user WHERE email = '{email}' LIMIT 1")
+        result = db.session.execute(sql_query)
+        user = result.fetchone()
+
         if user:  # Check if email already exists in db.
             flash('Email already exists.', category='error')
-        elif len(email) < 5:  # Check email length.
-            flash('Email address must be greater than 4 characters.', category='error')
-        elif len(first_name) < 2:  # Check first name length.
-            flash('First name must be greater than 1 character.', category='error')
+        # # Without these checks the code will be more vulnerable
+        # elif len(email) < 5:  # Check email length.
+        #     flash('Email address must be greater than 4 characters.', category='error')
+        # elif len(first_name) < 2:  # Check first name length.
+        #     flash('First name must be greater than 1 character.', category='error')
         elif password1 != password2:  # Check same 2 passwords.
             flash('Passwords do not match.', category='error')
         else:
