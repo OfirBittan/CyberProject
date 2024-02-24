@@ -1,5 +1,8 @@
+import datetime
+
 from flask import Blueprint, render_template, request, flash, redirect, url_for
 from flask_login import current_user, logout_user, login_required
+
 from .models import Customers
 from . import db
 
@@ -38,7 +41,8 @@ def add_customer():
         elif len(first_name) < 2:
             flash('First name must be greater than 1 character.', category='error')
         else:
-            new_customer = Customers(email=email, first_name=first_name, user_id=current_user.id)
+            new_customer = Customers(email=email, first_name=first_name, user_id=current_user.id,
+                                     date=datetime.datetime.now())
             db.session.add(new_customer)
             db.session.commit()
             flash(f'Added customer {new_customer.first_name}', category='success')
