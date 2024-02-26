@@ -1,9 +1,6 @@
 import datetime
-
 from flask import Blueprint, render_template, request, flash, redirect, url_for
 from flask_login import current_user, logout_user, login_required
-from sqlalchemy import text
-
 from .models import Customers
 from . import db
 
@@ -34,15 +31,7 @@ def add_customer():
     if request.method == 'POST':
         email = request.form.get('email')
         first_name = request.form.get('firstName')
-
-        # # Safe version
-        # customer = Customers.query.filter_by(email=email, user_id=current_user.id).first()
-
-        # Unsafe version
-        sql_query = text(f"SELECT * FROM customers WHERE email = '{email}' LIMIT 1")
-        result = db.session.execute(sql_query)
-        customer = result.fetchone()
-
+        customer = Customers.query.filter_by(email=email, user_id=current_user.id).first()
         if customer:
             flash('Email already exists.', category='error')
         # # Without these checks the code will be more vulnerable

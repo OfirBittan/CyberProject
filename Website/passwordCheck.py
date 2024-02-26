@@ -1,6 +1,5 @@
 from flask import flash
 from passlib.handlers.pbkdf2 import pbkdf2_sha256
-
 from Website.models import PasswordHistory
 
 
